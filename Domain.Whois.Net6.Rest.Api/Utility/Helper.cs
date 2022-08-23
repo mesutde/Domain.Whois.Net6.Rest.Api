@@ -49,6 +49,33 @@ namespace Domain.Whois.Net6.Rest.Api.Utility
             return Uri.TryCreate(source, UriKind.Absolute, out uriResult) && uriResult.Scheme == Uri.UriSchemeHttp;
         }
 
+        public static string GetFormatDateTRFormatter(string dt)
+        {
+            DateTime oDate = new DateTime();
+            if (dt != null && !dt.Equals(DBNull.Value))
+            {
+                oDate = DateTime.Parse(dt);
+            }
+
+            string _MonthValue = string.Empty;
+
+            if (oDate.Month.ToString().Length == 1)
+                _MonthValue = "0" + oDate.Month;
+            else
+                _MonthValue = oDate.Month.ToString();
+
+            string _DayValue = string.Empty;
+
+            if (oDate.Day.ToString().Length == 1)
+                _DayValue = "0" + oDate.Day;
+            else
+                _DayValue = oDate.Day.ToString();
+
+            string rValue = _DayValue + "." + _MonthValue + "." + oDate.Year;
+
+            return rValue;
+        }
+
         public static bool IsValidURL(string URL)
         {
             string Pattern = @"^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$";

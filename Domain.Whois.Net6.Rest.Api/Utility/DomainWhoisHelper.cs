@@ -11,8 +11,6 @@ namespace Domain.Whois.Net6.Rest.Api.Utility
 
             VresultDwh = GetStatScropDomainWhois(WhoisDomain);
 
-            //if (Dwh.DomainName.IndexOf(" Rate Limit") >= 0)
-            //    GetWhois();
 
             if (VresultDwh == null || VresultDwh.DomainName != null)
             {
@@ -26,7 +24,65 @@ namespace Domain.Whois.Net6.Rest.Api.Utility
                     VresultDwh = GetWhoisSsoft(WhoisDomain);
             }
 
+            if (VresultDwh == null || VresultDwh.DomainName != null)
+            {
+                if (VresultDwh == null || VresultDwh.DomainName.IndexOf(" Rate Limit") >= 0)
+                    VresultDwh = getDomainWhoisSufeinet(WhoisDomain);
+            }
+
             return VresultDwh;
+        }
+
+        public static DomainWhoisModel getDomainWhoisSufeinet(string url)
+        {
+            DomainWhoisModel Rdr = new DomainWhoisModel();
+
+            string domainstr = Helper.getHtmlCode("http://tool.sufeinet.com/Master/Whois.aspx?domain=" + url);
+            string getDomainIp = Helper.getHtmlCode("http://tool.sufeinet.com/Master/IP.aspx?ip=" + url);
+
+            string domain_name = Helper.FindStringBetween(domainstr, "Domain Name:", "<br/>");
+            string Registry_Domain_ID = Helper.FindStringBetween(domainstr, "Registry Domain ID:", "<br/>");
+            string Registrar_WHOIS_Server = Helper.FindStringBetween(domainstr, "Registrar WHOIS Server:", "<br/>");
+            string Registrar_URL = Helper.FindStringBetween(domainstr, "Registrar URL:", "<br/>");
+            string Updated_Date = Helper.FindStringBetween(domainstr, "Updated Date:", "<br/>");
+            string Creation_Date = Helper.FindStringBetween(domainstr, "Creation Date:", "<br/>");
+            string Registry_Expiry_Date = Helper.FindStringBetween(domainstr, "Registry Expiry Date:", "<br/>");
+            string Registrar = Helper.FindStringBetween(domainstr, "Registrar:", "<br/>");
+            string Registrar_IANA_ID = Helper.FindStringBetween(domainstr, "Registrar IANA ID:", "<br/>");
+            string Registrar_Abuse_Contact_Email = Helper.FindStringBetween(domainstr, "Registrar Abuse Contact Email:", "<br/>");
+            string Registrar_Abuse_Contact_Phone = Helper.FindStringBetween(domainstr, "Registrar Abuse Contact Phone:", "<br/>");
+            string Domain_Status = Helper.FindStringBetween(domainstr, "Domain Status:", "<br/>").Replace("https://icann.org/epp#ok", "").Trim();
+            string Name_Server_1 = Helper.FindStringBetween(domainstr, "Name Server:", "<br/>");
+            string DomainIp = Helper.FindStringBetween(getDomainIp, "IP地址[", "]的归属地是");
+
+            if (domain_name == null)
+            {
+                return null;
+            }
+
+            int index_NameServer2 = domainstr.IndexOf("Name Server:") + 17 + Name_Server_1.Length;
+            string Name_Server2 = domainstr.Remove(0, index_NameServer2);
+            Name_Server2 = Helper.FindStringBetween(Name_Server2, "Name Server:", "<br/>");
+
+            Rdr.DomainName = domain_name;
+            Rdr.DomainRegistrar = Registrar_URL;
+            Rdr.DomainServer = Registrar_WHOIS_Server;
+            //Rdr.Registrar_URL = Registrar_URL;
+            Rdr.UpdatedDate = Helper.GetFormatDateTRFormatter(Updated_Date);
+            Rdr.CreationDate = Helper.GetFormatDateTRFormatter(Creation_Date);
+            Rdr.ExpirationDate = Helper.GetFormatDateTRFormatter(Registry_Expiry_Date);
+            // Rdr.RegistrantName = Registry_Domain_ID;
+            Rdr.RegistrantOrganization = Registrar;
+            Rdr.RegistrantEmail = Registrar_Abuse_Contact_Email;
+            Rdr.RegistrantPhone = Registrar_Abuse_Contact_Phone;
+            Rdr.SiteStatus = Domain_Status;
+            Rdr.NameServer = Name_Server_1;
+            Rdr.ServerIp = DomainIp;
+
+            //Rdr.Name_Server_2 = Name_Server2;
+            //Rdr.DomainIp = DomainIp;
+
+            return Rdr;
         }
 
         public static DomainWhoisModel GetWhoisSsoft(string url)
@@ -113,7 +169,13 @@ namespace Domain.Whois.Net6.Rest.Api.Utility
             Dwh.RegistrantCountry = lstInterest[17].Replace("Registrant Country: ", "").Trim();
             Dwh.RegistrantPhone = lstInterest[18].Replace("Registrant Phone: ", "").Trim();
             Dwh.RegistrantEmail = lstInterest[22].Replace("Registrant Email: ", "").Trim();
-            Dwh.NameServer = lstInterest[49].Replace("Name Server: ", "").Trim();
+
+            if (Dwh.NameServer!=null)
+            {
+                Dwh.NameServer = lstInterest[49].Replace("Name Server: ", "").Trim();
+
+            }
+
             Dwh.CreationDate = lstInterest[5].Replace("Creation Date: ", "").Trim();
             Dwh.UpdatedDate = lstInterest[4].Replace("Updated Date: ", "").Trim();
             Dwh.ExpirationDate = lstInterest[6].Replace("Registrar Registration Expiration Date: ", "").Trim();
